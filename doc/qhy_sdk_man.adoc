@@ -43,13 +43,16 @@ Inside the build folder (create it if it doesn't exists), first remove the exist
 cmake ../testapp/SingleFrameMode/ && make
 ----
 
-NOTE: If the above command outputs not found .h libraries, check their location with pkg-config, for example for libusb.h
+If the above command reports some missing .h libraries, check their location with pkg-config. As an example, if the library libusb.h is missing then run
 
 ----
 pkg-config libusb-1.0 --libs --cflags
 ----
-
-In my case, I had to change 
+That command outputs the location of the library and provides a way to include it in the makefile
+----
+-I/usr/include/libusb-1.0 -lusb-1.0
+----
+To correct dependencies you can always change the sources to match theotput of pkg-config. For the later example
 
 .Files QHYCCD/include/qhycam.h and qhydevice.h
 ----
@@ -78,6 +81,7 @@ camhandle = OpenQHYCCD(id);
 and then use it to settle all the relevant parameters of the aquisition
 
 .Setting parameters
+[source, cpp, numbered]
 ----
 SetQHYCCDStreamMode(camhandle,0);
 InitQHYCCD(camhandle);
@@ -91,6 +95,7 @@ SetQHYCCDBitsMode(camhandle,16);
 ----
 And finally, get the picture
 
+[source, cpp, numbered]
 ----
 ExpQHYCCDSingleFrame(camhandle);
 GetQHYCCDMemLength(camhandle);
@@ -100,6 +105,7 @@ ReleaseQHYCCDResource();
 ----
 
 .Live Capture Mode
+[source, cpp, numbered]
 ----
 InitQHYCCDResource();
 num=ScanQHYCCD();
@@ -126,41 +132,68 @@ CloseQHYCCD(camhandle);
 ReleaseQHYCCDResource();
 ----
 
+== Technical notes
+
+To compile the shared libraries use
+----
+g++ -fPIC -shared  -o lib.so ../testapp/generate_so/generate_so.cpp -lqhyccd
+----
+the lqhyccd flag links the binary libraries previously installed in the firmware folder.
+
+The .cpp file should be prepended with "extern "C"{code} to unmangle the compiled funcion names.
+
 == Sample Codes
 
 SingleFrameCapture
 
 LiveVideoCapture
 
-== SDK Manual (under construction)
+== SDK command list and usage
+Here is some useful reference of the commands available to set up the camera and aquire images whith a brief explanation on each one.
+
+=== Initializating the SDK
 [source, cpp]
 ----
 uint32_t STDCALL InitQHYCCDResource(void)
 ----
-This function need to be call when first using QHYCCD SDK. If the SDK is already initialized. You can still call this and it will re-initialize the resource.Looks like a new start. This function will return the the QHYCCD_ERROR code. 0=success
+This function needs to be call when first using QHYCCD SDK. If the SDK is already initialized, you can still call it and it will re-initialize the resource and it will look like a new start. This function will return the the QHYCCD_ERROR code (0=success).
 
+=== Scan available cameras
 [source, cpp]
 ----
 uint32_t STDCALL ScanQHYCCD(void)
 ----
-This function will scan all QHYCCD cameras connected with the computer. The return value is the number of cameras. If one camera connected with the computer. the return value is 1.  If two cameras connected, it return 2 , and so on.This function will return the the QHYCCD_ERROR code. 0=success.
+This function will scan all QHYCCD cameras connected with the computer. The return value is the number of cameras. For example, if there is just one camera connected with the computer, the return value is 1.  If two cameras connected, it return 2 , and so on. This function will return the the QHYCCD_ERROR code.
 
+=== Getting the camera's ID
+[source, cpp, numbered]
+----
 uint32_t STDCALL GetQHYCCDId(uint32_t index, char *id)
-Get the camera ID. ID is a string and includes the camera name and series number. like "QHY247C-6a86bd46a1aeba2d6". Since each camera has an unique guid, like "6a86bd46a1aeba2d6" so this can be used to identity each camera when multiple camera connected.
-You can input the index and get the ID.   The index range is start from 0. For example. If there is five QHYCCD cameras connected. The index is 0,1,2,3,4
-This function will return the the QHYCCD_ERROR code. 0=success.
+----
+The id argument is a string and includes the camera name and series number (for example "QHY247C-6a86bd46a1aeba2d6"). Since each camera has an unique guid, (in the later case is "6a86bd46a1aeba2d6") this can be used to identity each camera when multiple cameras are connected.
+You can input the index, starting from 0 and get the ID. For example, if there are five QHYCCD cameras connected, the indexes will be 0,1,2,3 and 4. This function will return the the QHYCCD_ERROR code.
 
+=== Opening camera ports
+
+[source, cpp, numbered]
+----
 qhyccd_handle * STDCALL OpenQHYCCD(char *id)
-Open Camera. The input is the camera id.   The return value is a handle. This handle represent this camera. In most of the camera control command in QHYCCD we are using the handle as the input to refer a camera.
+----
+When you call this function with the camera id as an argument, the return value is a handle. This handle represents the selected camera. In most of the camera control commands in QHYCCD, this handle will be used as an input to manage it.
 
+=== Setting the stream mode
+
+[source, cpp, numbered]
+----
 uint32_t STDCALL SetQHYCCDStreamMode(qhyccd_handle *handle, uint8_t mode)
-There is two basic streaming mode for QHYCCD. One is the Single Capture Mode. Another is the Video Streaming Mode.
+----
+There are two basic streaming modes for QHYCCD. The *Single Capture Mode*,and the *Video Streaming Mode*, wich can be set using the following codes:
 
-mode=0:   Single Capture Mode
-mode=1:   Video Streaming Mode
+* mode=0:   Single Capture Mode
+* mode=1:   Video Streaming Mode
 
-Single Capture is Sync with the Begin Exposure Command. The sequence is :
-Send Begin Exposure Command to SDK---- Camera begin to exposure -----After end exposure camera will begin to output the data ---- Use Get Single Image Command to get the data.
+Single Capture is Sync'd with the Begin Exposure Command. In this mode of operation, after sending *Begin Exposure* Command to SDK (*ExpQHYCCDSingleFrame()*), the camera starts the capture. When the exposure time is over, it will begin to output the data. Use Get Single Image Command (*GwtQHYCCDSingleFrame()*) to get the data.
+
 Video Steaming Mode a free running mode. The sequence is :
 Send Start Live Streaming Command to SDK---Camera begin the live streaming capture and return the data
 During this period. You can use Get Live Frame Command to get the data.
@@ -168,27 +201,39 @@ You can use Stop Live Frame command to stop camera live streaming.
 After OpenQHYCCD, We recommend to call this function before other operations
 
 
+[source, cpp, numbered]
+----
 uint32_t STDCALL InitQHYCCD(qhyccd_handle *handle)
+----
 This function will initialize the camera hardware and other basic settings This function should be call after SetQHYCCDStreamMode. After this function called. The camera hardware will be ready to use. In this function. the SDK will initialize some basic setting like the image bit depth, ROI, exposure time etc.   These parameter can be also changed separately later with the Parameter Command.
-
+[source, cpp, numbered]
+----
 uint32_t STDCALL GetQHYCCDChipInfo(qhyccd_handle *h,double *chipw,double *chiph,uint32_t *imagew,uint32_t *imageh,double *pixelw,double *pixelh,uint32_t *bpp)
+----
 This function will output the basic information of the camera.  Includes the physical pixel size, the basic pixel array size. and the current image depth.
 Please note the pixel width and pixel height is in physical. So even with BIN22, the pixel size is still the physical pixel size, it will not change with the binning setting.
 The image array width and height is the maxium image width and height. Even in small ROI or in overscan area removed mode. this size will not change.
 The image depth ¡°bpp¡±, will be changed if user set the bitDepth by the Set Parameter command
 Normally this function can be used to determined the sensor size information and get to know the max image size of one camera model.
 
-
+[source, cpp, numbered]
+----
 uint32_t STDCALL GetQHYCCDEffectiveArea(qhyccd_handle *h,uint32_t *startX, uint32_t *startY, uint32_t *sizeX, uint32_t *sizeY)
+----
 This function will output the effective area dimensions and start positions. This function only return the information and it will not set the camera to some specially mode (like the overscan removed mode).
 startX,startY  The effective area start position
 sizeX,sizeY     The effective area size
 These information is the physical value. It does not get effected by the ROI, BINNING and OverScan removed mode setting.
-
+[source, cpp, numbered]
+----
 uint32_t STDCALL GetQHYCCDOverScanArea(qhyccd_handle *h,uint32_t *startX, uint32_t *startY, uint32_t *sizeX, uint32_t *sizeY)
+----
 Some CCD has the overscan area. This function will output the startx,starty,sizex,sizey of the overscan area. This data is physical in the original image (max size).And it does not effected by the ROI,BINNING and OVERSCAN removed mode.
 
+[source, cpp, numbered]
+----
 uint32_t STDCALL SetQHYCCDResolution(qhyccd_handle *handle, uint32_t x, uint32_t y, uint32_t xsize, uint32_t ysize)
+----
 This function will set the camera ROI.
 In BIN11 (no binning) mode, it is based on the coordination of the BIN11 image
 In other binning mode, it is based on the coordination of  these binning image.
@@ -196,7 +241,10 @@ In other binning mode, it is based on the coordination of  these binning image.
 For example:
 QHY247C the BIN11 is 0,0,6088,3992.
 The ROI start from x=100,y=200,xsize=1000,ysize=2000, it is
+[source, cpp, numbered]
+----
 SetQHYCCDResolution(handle, 100,200,1000,2000)
+----
 QHY247C the BIN22 is 0,0,3044,1996
 The ROI start from x=100,y=200,xsize=1000,ysize=1000, it is
 SetQHYCCDResolution(handle, 100,200,1000,2000)

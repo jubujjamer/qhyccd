@@ -1,6 +1,5 @@
 
-//#define OPEN_CV
-
+#define OPEN_CV
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,10 +8,13 @@
 
 #ifdef OPEN_CV
 #include <opencv2/opencv.hpp>
+#include <cv.h>
+#include <highgui.h>
+#include <opencv2/imgproc/imgproc.hpp>
 #endif
 
 int main(int argc, char *argv[]) {
-	
+
     // parse command line:
     if (7 != argc) {
 	printf("Use     : %s image_count exp_time gain offset usb_traffic cmos_speed\n", argv[0]);
@@ -27,57 +29,57 @@ int main(int argc, char *argv[]) {
     //}
 
     // convert command line parameters
-    
+
     // 1. number of images
     int image_count = atoi(argv[1]);
-    
+
     // 2. exposure time
     int exp_time = atoi(argv[2]);
-	
+
     // 3. gain
     int gain = atoi(argv[3]);
-	
+
     // 4. offset
     int offset = atoi(argv[4]);
-    
+
     // 5 usb_traffic
     int usb_traffic = atoi(argv[5]);
-    
+
     // 6. cmos_speed
     int cmos_speed = atoi(argv[6]);
 
     const char *pFirmware = "/usr/local/lib/qhy";
-    
+
     double VERSION = 1.00;
-    
+
     int camBinX = 1;
     int camBinY = 1;
-    
+
     double chipWidthMM;
     double chipHeightMM;
     double pixelWidthUM;
     double pixelHeightUM;
-    
+
     unsigned int roiStartX;
     unsigned int roiStartY;
     unsigned int roiSizeX;
     unsigned int roiSizeY;
-    
+
     unsigned int overscanStartX;
     unsigned int overscanStartY;
     unsigned int overscanSizeX;
     unsigned int overscanSizeY;
-    
+
     unsigned int effectiveStartX;
     unsigned int effectiveStartY;
     unsigned int effectiveSizeX;
     unsigned int effectiveSizeY;
-    
+
     unsigned int maxImageSizeX;
     unsigned int maxImageSizeY;
     unsigned int bpp;
     unsigned int channels;
-    
+
 #ifdef OPEN_CV
     cv::Mat cvImg;
     int cvImgType;
@@ -85,7 +87,7 @@ int main(int argc, char *argv[]) {
 #else
     unsigned char *pImgData = 0;
 #endif
-    
+
     int oldMemLength = 0;
 
     int cam_count;
@@ -94,12 +96,12 @@ int main(int argc, char *argv[]) {
     char cam_id[32];
     qhyccd_handle *pCamHandle = 0;
     uint32_t ret_value;
- 
+
     printf("SingleFrameMode test application, Version: %.2f\n", VERSION);
     printf("This is a simple test application which takes series of images from the first detected QHYCCD USB camera.\n");
     printf("Press any key to start application...\n");
     getchar();
-     
+
     // first we have to call the InitQHYCCDResource function to initialize SDK
     ret_value = InitQHYCCDResource();
     if (QHYCCD_SUCCESS == ret_value) {
@@ -114,7 +116,7 @@ int main(int argc, char *argv[]) {
         // printf("OSXInitQHYCCDFirmware start...\n");
         // OSXInitQHYCCDFirmware(pFirmware);
         // printf("OSXInitQHYCCDFirmware end...\n");
-    
+
         // scan cameras
 		if ((cam_count = ScanQHYCCD()) < 1) {
             printf("No camera found...\n");
@@ -128,7 +130,7 @@ int main(int argc, char *argv[]) {
             printf("Cannot get camera ID value: %d,  cameraID = %s\n", (cam_idx + 1), cam_id);
             continue;
 		}
-        
+
         // open camera
         pCamHandle = OpenQHYCCD(cam_id);
         if (0 == pCamHandle) {
@@ -149,7 +151,7 @@ int main(int argc, char *argv[]) {
 		if (QHYCCD_SUCCESS != ret_value) {
             printf("InitQHYCCD failure, error: %d\n", ret_value);
             continue;
-		}	
+		}
 
         // set exposure time
         ret_value = SetQHYCCDParam(pCamHandle, CONTROL_EXPOSURE, exp_time);
@@ -158,7 +160,7 @@ int main(int argc, char *argv[]) {
             printf("SetQHYCCDParam CONTROL_EXPOSURE failure, error: %d\n", ret_value);
             continue;
         }
-       
+
         // check/set gain
         ret_value = IsQHYCCDControlAvailable(pCamHandle, CONTROL_GAIN);
         if (QHYCCD_SUCCESS == ret_value) {
@@ -171,7 +173,7 @@ int main(int argc, char *argv[]) {
         } else {
             printf("SetQHYCCDParam CONTROL_GAIN                  : This function is not supported by this model.\n\n");
         }
-        
+
         // check/set offset
         ret_value = IsQHYCCDControlAvailable(pCamHandle, CONTROL_OFFSET);
         if (QHYCCD_SUCCESS == ret_value) {
@@ -209,8 +211,8 @@ int main(int argc, char *argv[]) {
             }
 		} else {
             printf("SetQHYCCDParam CONTROL_SPEED                 : This function is not supported by this model.\n");
-		}        
-        
+		}
+
         /*
         // get overscan area
         ret_value = GetQHYCCDOverScanArea(pCamHandle, &overscanStartX, &overscanStartY, &overscanSizeX, &overscanSizeY);
@@ -234,9 +236,10 @@ int main(int argc, char *argv[]) {
             continue;
         }
         */
-        
+
         // get chip info
-        ret_value = GetQHYCCDChipInfo(pCamHandle, &chipWidthMM, &chipHeightMM, &maxImageSizeX, &maxImageSizeY, &pixelWidthUM, &pixelHeightUM, &bpp);
+        ret_value = GetQHYCCDChipInfo(pCamHandle, &chipWidthMM, &chipHeightMM,
+					 &maxImageSizeX, &maxImageSizeY, &pixelWidthUM, &pixelHeightUM, &bpp);
         if (QHYCCD_SUCCESS == ret_value) {
             printf("GetQHYCCDChipInfo:\n");
             printf("Chip  size width x height                    : %.3f x %.3f [mm]\n", chipWidthMM, chipHeightMM);
@@ -246,13 +249,13 @@ int main(int argc, char *argv[]) {
             printf("GetQHYCCDChipInfo failure, error: %d\n", ret_value);
             continue;
         }
-    
+
         // set ROI
         roiStartX = 0;
         roiStartY = 0;
         roiSizeX = maxImageSizeX;
         roiSizeY = maxImageSizeY;
-            
+
         // check if color/mono camera
         ret_value = IsQHYCCDControlAvailable(pCamHandle, CAM_COLOR);
         if (ret_value == BAYER_GB || ret_value == BAYER_GR || ret_value == BAYER_BG || ret_value == BAYER_RG) {
@@ -326,7 +329,7 @@ int main(int argc, char *argv[]) {
                 printf("ExpQHYCCDSingleFrame failure, error: %d\n", ret_value);
                 break;
             }
-		
+
             // check end of exposure
             //uint32_t exp_downcount;
             //
@@ -335,19 +338,19 @@ int main(int argc, char *argv[]) {
             //    printf("GetQHYCCDExposureRemaining                   : %d [us]\n", exp_downcount);
             //    sleep(1);
             //} while (exp_downcount > 0);
-            
+
 #ifdef OPEN_CV
 
             // get single frame
             ret_value = GetQHYCCDSingleFrame(
-                    pCamHandle, 
-                    &roiSizeX, 
-                    &roiSizeY, 
-                    &bpp, 
-                    &channels, 
+                    pCamHandle,
+                    &roiSizeX,
+                    &roiSizeY,
+                    &bpp,
+                    &channels,
                     cvImg.ptr<uint8_t>(0));
-         
-#else     
+
+#else
             // get requested memory length
             uint32_t length = GetQHYCCDMemLength(pCamHandle);
             //printf("GetQHYCCDMemLength: %d [bytes]\n", length);
@@ -362,18 +365,21 @@ int main(int argc, char *argv[]) {
 				oldMemLength = length;
 				printf("Frame memory of %d bytes allocated...\n", length);
             }
-            
+
             // get single frame
             ret_value = GetQHYCCDSingleFrame(pCamHandle, &roiSizeX, &roiSizeY, &bpp, &channels, pImgData);
-            
+
 #endif
-            
+
             if (QHYCCD_SUCCESS == ret_value) {
-                
+
 #ifdef OPEN_CV
                 // show frame
             	//printf("GetQHYCCDSingleFrame: %d x %d, bpp: %d, channels: %d, done...\n", roiSizeX, roiSizeY, bpp, channels);
-                cv::imshow("imgWin", cvImg);
+								// cv::Mat gray_image;
+ 								// cv::cvtColor( cvImg, gray_image, CV_BGR2GRAY );
+								cv::imwrite( "Gray_Image.tiff", cvImg);
+								cv::imshow("imgWin", cvImg);
                 cvWaitKey(10);
 #else
             	printf("GetQHYCCDSingleFrame: %d x %d, bpp: %d, channels: %d, done...\n", roiSizeX, roiSizeY, bpp, channels);
@@ -382,16 +388,16 @@ int main(int argc, char *argv[]) {
             } else {
 				printf("GetQHYCCDSingleFrame failure, error: %d\n", ret_value);
             }
-		
+
 		} // for number of images
-	
+
     } while (0);
 
     ret_value = CancelQHYCCDExposingAndReadout(pCamHandle);
     if (QHYCCD_SUCCESS != ret_value) {
        	printf("CancelQHYCCDExposingAndReadout failure, error: %d\n", ret_value);
     }
- 
+
     // close camera handle
     ret_value = CloseQHYCCD(pCamHandle);
     if (QHYCCD_SUCCESS == ret_value) {
@@ -413,12 +419,12 @@ int main(int argc, char *argv[]) {
     if (bNamedWindow) {
         cv::destroyWindow("imgWin");
     }
-#else    
+#else
     if (0 != pImgData) {
 		delete [] pImgData;
     }
 #endif
-    
+
     printf("Press any key to exit application...\n");
     getchar();
     return 0;
