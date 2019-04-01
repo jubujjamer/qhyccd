@@ -1,23 +1,23 @@
 /*
  QHYCCD SDK
- 
+
  Copyright (c) 2014 QHYCCD.
  All Rights Reserved.
- 
+
  This program is free software; you can redistribute it and/or modify it
  under the terms of the GNU General Public License as published by the Free
  Software Foundation; either version 2 of the License, or (at your option)
  any later version.
- 
+
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  more details.
- 
+
  You should have received a copy of the GNU General Public License along with
  this program; if not, write to the Free Software Foundation, Inc., 59
  Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
+
  The full GNU General Public License is included in this distribution in the
  file called LICENSE.
  */
@@ -36,12 +36,12 @@
 #ifdef WIN32
 #include "CyAPI.h"
 #include <process.h>
-#else // Linux & Mac 
+#else // Linux & Mac
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
-//#include <libusb-1.0/libusb.h>
-#include <libusb.h>
+#include <libusb-1.0/libusb.h>
+//#include <libusb.h>
 #endif // WIN32
 
 #include "stdint.h"
@@ -60,8 +60,8 @@
 #define LIBUSB_CONTROL_TRANSFER_RD_TIMEOUT (5000)
 #define LIBUSB_CONTROL_TRANSFER_WR_TIMEOUT (1000)
 
-#define LIBUSB_BULK_TRANSFER_RD_TIMEOUT  (5000) 
-#define LIBUSB_BULK_TRANSFER_WR_TIMEOUT  (1000) 
+#define LIBUSB_BULK_TRANSFER_RD_TIMEOUT  (5000)
+#define LIBUSB_BULK_TRANSFER_WR_TIMEOUT  (1000)
 
 #define LIBUSB_ASYNC_BULK_TRANSFER_TIMEOUT (3600000)
 
@@ -91,27 +91,27 @@ typedef struct libusb_device_handle qhyccd_handle;
 class QHYCAM {
 public:
 
-    QHYCAM(); 
+    QHYCAM();
     virtual ~QHYCAM();
-    
+
     //inline UnlockImageQueue *GetImageQueue() {
     //	return m_pImageQueue;
     //}
-    
+
     //static void* EventThreadFunc(void *arg);
     //static void AsyImageDataCallBack(struct libusb_transfer *transfer);
-    
-    //int AllocFillSubmitBulkTransfers(qhyccd_handle *pCamera);        
+
+    //int AllocFillSubmitBulkTransfers(qhyccd_handle *pCamera);
     //int32_t InitAsyQCamLive2(qhyccd_handle *pDevHandle, int32_t x, int32_t y, int32_t depth, int32_t frameSize);
     //bool BeginAsyQCamLive2(qhyccd_handle *pDevHandle);
     //void StopAsyQCamLive2(qhyccd_handle *pDevHandle);
-    //uint32_t ReadAsyQCamLiveFrame2(qhyccd_handle *pDevHandle, uint8_t *pBuffer, int32_t *pFrameFlag);   
+    //uint32_t ReadAsyQCamLiveFrame2(qhyccd_handle *pDevHandle, uint8_t *pBuffer, int32_t *pFrameFlag);
     //void SetFlagRawExit2(bool value);
     //int GetEventCount2();
     //int IncreaseEventCount2();
     //int DecreaseEventCount2();
     //bool IsFlagRawExit2();
-    
+
     /**
      @fn uint32_t openCamera(qhyccd_deivce *d,qhyccd_handle **h)
      @brief open the camera,open the device handle
@@ -134,7 +134,7 @@ public:
      @fn uint32_t sendForceStop(qhyccd_handle *h)
      @brief force stop exposure
      @param h device control handle
-         @return 
+         @return
          success return QHYCCD_SUCCESS \n
      another QHYCCD_ERROR code on other failures
      */
@@ -538,13 +538,13 @@ public:
     static void findCompleteFrame(uint8_t *rawarray, uint32_t length);
     static void asyImageDataCallBack(struct libusb_transfer *transfer);
     const char* STDCALL GetTimeStamp();
-    
+
     uint32_t camstatus; // the camera current status
     uint32_t ep1num; // ep1in transfer data length
     uint32_t usbintrep; // usb interrupt read endpoint
     uint32_t psize; // usb transfer package size at onece
     uint32_t totalp; // the total usb transfer packages
-    uint32_t patchnumber; // patch for image transfer packages 
+    uint32_t patchnumber; // patch for image transfer packages
     uint32_t readp; // the number of alreay read usb transfer packages
 
     int32_t m_UsbTransferred;
@@ -556,9 +556,9 @@ public:
     uint8_t intepflag;
     uint8_t usbtype;
     uint8_t m_UsbPacket[LIBUSB_PACKET_LENGTH];
-    
+
     CCDREG ccdreg; // ccd registers params
-    BIOREG imgreg; // bioccd registers params 
+    BIOREG imgreg; // bioccd registers params
     char timeStampStr[128];
 
 #ifdef WIN32
@@ -566,7 +566,7 @@ public:
 #else
     pthread_mutex_t mutex;
 #endif
-    
+
 };
 
 #endif

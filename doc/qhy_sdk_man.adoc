@@ -1,15 +1,84 @@
-# QHYCCD SDK User Manual
+= QHYCCD SDK User Manual
+Juan Marco Bujjamer <jubujjamer@df.uba.ar>
+30th March of 2019
+:toc:
+:icons: font
+:source-highlighter: coderay
 
-Date 2018/07/15
+This is a basic usage manual for the QHY SDK. Originally taken from QHY's web page and completed from it. 
 
-## BASIC Working Flow
+== Installing the SDK
+NOTE: This is the SDK version for Intel 64 bit machines, for the ARM version chek https://github.com/qhyccd-lzr/QHYCCD_Linux_New. 
 
-.Single Image Capture Mode
+For later reference, the home folder of the SDK will be noted as 'QHYCCD', wherever you have installed it. The first step is to install it's drivers, so run
+
+=== Installing QHY drivers
+
+First, it is necessary to install the camera's drivers.
+
+.Installing drivers
 ----
+sudo QHYCCD/install_scripts/linux_install_sdk_driver.sh
+----
+
+This will simlpy copy the drivers to your local libraries directory '/usr/local/lib', udev rules firmware and FX3 support.
+
+=== Compiling the first example
+
+The next step is to compile the examples provided by the base SDK. Let's compile 'SingleFrameMode'.
+
+.Requirements
+- cmake version 2.6 or supperior.
+- libusb-1.0-0-dev
+- opencv
+
+----
+sudo apt install cmake libusb-1.0-0-dev
+----
+Then follow the instructions in https://www.pyimagesearch.com/2018/05/28/ubuntu-18-04-how-to-install-opencv/ to install opencv.
+
+Inside the build folder (create it if it doesn't exists), first remove the existing files with 'rm -rf *' and then
+
+----
+cmake ../testapp/SingleFrameMode/ && make
+----
+
+NOTE: If the above command outputs not found .h libraries, check their location with pkg-config, for example for libusb.h
+
+----
+pkg-config libusb-1.0 --libs --cflags
+----
+
+In my case, I had to change 
+
+.Files QHYCCD/include/qhycam.h and qhydevice.h
+----
+#include <libusb.h>  -->  #include <libusb-1.0/libusb.h>
+----
+
+== BASIC Working Flow
+
+Now, the basic workflow of the SDK to get an image contains the following functions. 
+
+First there should be created a handle of the device.
+
+.Getting a handle of the device
+[source, cpp, numbered]
+----
+// Initializing the SDK
 InitQHYCCDResource();
-ScanQHYCCD();
+// Check if there are cameras available
+cam_count = ScanQHYCCD();
+// Select one of the listed cameras (0 is the first one of them)
 GetQHYCCDId(0,id);
+// Open camera and get a handle of it
 camhandle = OpenQHYCCD(id);
+----
+
+and then use it to settle all the relevant parameters of the aquisition
+
+.Setting parameters
+----
 SetQHYCCDStreamMode(camhandle,0);
 InitQHYCCD(camhandle);
 GetQHYCCDChipInfo(camhandle,&chipw,&chiph,&w,&h,&pixelw,&pixelh,&bpp);
@@ -19,6 +88,10 @@ SetQHYCCDResolution(camhandle,0,0,w,h);
 SetQHYCCDBinMode(camhandle,cambinx,cambiny);
 IsQHYCCDControlAvailable(camhandle,CONTROL_TRANSFERBIT);
 SetQHYCCDBitsMode(camhandle,16);
+----
+And finally, get the picture
+
+----
 ExpQHYCCDSingleFrame(camhandle);
 GetQHYCCDMemLength(camhandle);
 GetQHYCCDSingleFrame(camhandle,&w,&h,&bpp,&channels,ImgData);
@@ -53,17 +126,24 @@ CloseQHYCCD(camhandle);
 ReleaseQHYCCDResource();
 ----
 
-## Sample Codes
+== Sample Codes
 
 SingleFrameCapture
+
 LiveVideoCapture
 
-# SDK Manual (under construction)
+== SDK Manual (under construction)
+[source, cpp]
+----
 uint32_t STDCALL InitQHYCCDResource(void)
+----
 This function need to be call when first using QHYCCD SDK. If the SDK is already initialized. You can still call this and it will re-initialize the resource.Looks like a new start. This function will return the the QHYCCD_ERROR code. 0=success
 
-uint32_t STDCALL ScanQHYCCD()
-This function will scan all QHYCCD cameras connecting with the computer. The return value is the number of cameras. If one camera connected with the computer. the return value is 1.  If two cameras connected, it return 2 , and so on.This function will return the the QHYCCD_ERROR code. 0=success.
+[source, cpp]
+----
+uint32_t STDCALL ScanQHYCCD(void)
+----
+This function will scan all QHYCCD cameras connected with the computer. The return value is the number of cameras. If one camera connected with the computer. the return value is 1.  If two cameras connected, it return 2 , and so on.This function will return the the QHYCCD_ERROR code. 0=success.
 
 uint32_t STDCALL GetQHYCCDId(uint32_t index, char *id)
 Get the camera ID. ID is a string and includes the camera name and series number. like "QHY247C-6a86bd46a1aeba2d6". Since each camera has an unique guid, like "6a86bd46a1aeba2d6" so this can be used to identity each camera when multiple camera connected.
