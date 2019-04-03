@@ -5,10 +5,10 @@ Juan Marco Bujjamer <jubujjamer@df.uba.ar>
 :icons: font
 :source-highlighter: coderay
 
-This is a basic usage manual for the QHY SDK. Originally taken from QHY's web page and completed from it. 
+This is a basic usage manual for the QHY SDK. Originally taken from QHY's web page and completed from it.
 
 == Installing the SDK
-NOTE: This is the SDK version for Intel 64 bit machines, for the ARM version chek https://github.com/qhyccd-lzr/QHYCCD_Linux_New. 
+NOTE: This is the SDK version for Intel 64 bit machines, for the ARM version chek https://github.com/qhyccd-lzr/QHYCCD_Linux_New.
 
 For later reference, the home folder of the SDK will be noted as 'QHYCCD', wherever you have installed it. The first step is to install it's drivers, so run
 
@@ -61,7 +61,7 @@ To correct dependencies you can always change the sources to match theotput of p
 
 == BASIC Working Flow
 
-Now, the basic workflow of the SDK to get an image contains the following functions. 
+Now, the basic workflow of the SDK to get an image contains the following functions.
 
 First there should be created a handle of the device.
 
