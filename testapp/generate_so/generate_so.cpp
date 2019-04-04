@@ -3,7 +3,10 @@
 #include <unistd.h>
 #include <string.h>
 #include "../../include/qhyccd.h"
-
+#include <opencv2/opencv.hpp>
+// #include <cv.h>
+// #include <highgui.h>
+#include <opencv2/imgproc/imgproc.hpp>
 // Use exter C to unmangle function names in compiled .so
 extern "C" {
   const char *pFirmware = "/usr/local/lib/qhy";
@@ -138,23 +141,31 @@ extern "C" {
       return ret_value;
       }
 
-      /*Get CCD info, Chip size, Pixel Size and Image Size*/
-      uint32_t get_ccd_info(qhyccd_handle *pCamHandle){
-        uint32_t ret_value;
-        double chipWidthMM;
-        double chipHeightMM;
-        double pixelWidthUM;
-        double pixelHeightUM;
-        unsigned int maxImageSizeX;
-        unsigned int maxImageSizeY;
-        unsigned int bpp;
-        ret_value = GetQHYCCDChipInfo(pCamHandle, &chipWidthMM, &chipHeightMM, &maxImageSizeX, &maxImageSizeY, &pixelWidthUM, &pixelHeightUM, &bpp);
-        printf("GetQHYCCDChipInfo:\n");
-        printf("Chip  size width x height: %.3f x %.3f [mm]\n", chipWidthMM, chipHeightMM);
-        printf("Pixel size width x height: %.3f x %.3f [um]\n", pixelWidthUM, pixelHeightUM);
-        printf("Image size width x height: %d x %d\n", maxImageSizeX, maxImageSizeY);
-        return ret_value;
-    }
+    /*Get CCD info, Chip size, Pixel Size and Image Size*/
+    double ccd_info[7];
+    double * get_ccd_info(qhyccd_handle *pCamHandle){
+      uint32_t ret_value;
+      double chipWidthMM;
+      double chipHeightMM;
+      double pixelWidthUM;
+      double pixelHeightUM;
+      unsigned int maxImageSizeX;
+      unsigned int maxImageSizeY;
+      unsigned int bpp;
+      GetQHYCCDChipInfo(pCamHandle, &chipWidthMM, &chipHeightMM, &maxImageSizeX, &maxImageSizeY, &pixelWidthUM, &pixelHeightUM, &bpp);
+      printf("GetQHYCCDChipInfo:\n");
+      printf("Chip  size width x height: %.3f x %.3f [mm]\n", chipWidthMM, chipHeightMM);
+      printf("Pixel size width x height: %.3f x %.3f [um]\n", pixelWidthUM, pixelHeightUM);
+      printf("Image size width x height: %d x %d\n", maxImageSizeX, maxImageSizeY);
+      ccd_info[0] = chipWidthMM;
+      ccd_info[1] = chipHeightMM;
+      ccd_info[2] = pixelWidthUM;
+      ccd_info[3] = pixelHeightUM;
+      ccd_info[4] = double(maxImageSizeX);
+      ccd_info[5] = double(maxImageSizeY);
+      ccd_info[6] = double(bpp);
+      return ccd_info;
+  }
 
     /*Dummy*/
     uint32_t is_color(qhyccd_handle *pCamHandle){
@@ -188,12 +199,13 @@ extern "C" {
     This funcion is not documented. I'll check some values to see watch it's behavior.
     In the example bits = 16 is used. CHECK
     */
-    uint32_t set_bits_mode(qhyccd_handle *pCamHandle){
+    uint32_t set_bits_mode(qhyccd_handle *pCamHandle, char bits){
       uint32_t ret_value;
-      char bits = 16;
+      // char bits = 16;
       ret_value = IsQHYCCDControlAvailable(pCamHandle, CONTROL_TRANSFERBIT);
-      if (QHYCCD_SUCCESS == ret_value) {
-          ret_value = SetQHYCCDBitsMode(pCamHandle, bits);}
+      if (QHYCCD_SUCCESS == ret_value){
+          ret_value = SetQHYCCDBitsMode(pCamHandle, bits);
+      }
       return ret_value;}
 
     /*Start exposure*/
@@ -221,12 +233,32 @@ extern "C" {
     16 bits arrays. One possibility is that the lenght doubles the real length
     of the array. CHECK.
     */
-    unsigned char * get_single_frame(qhyccd_handle *pCamHandle, unsigned int roiSizeX, unsigned int roiSizeY, unsigned int bpp, unsigned int channels, uint32_t length){
+    unsigned char * get_single_frame(qhyccd_handle *pCamHandle, unsigned int roiSizeX, unsigned int roiSizeY, uint32_t length){
       uint32_t ret_value;
       unsigned char *pImgData = 0;
+      unsigned int bpp;
+      unsigned int channels;
+      // printf("length %d\n", length);
+      // pImgData = new unsigned char[length];
       pImgData = new unsigned char[length];
       ret_value = GetQHYCCDSingleFrame(pCamHandle, &roiSizeX, &roiSizeY, &bpp, &channels, pImgData);
       return pImgData;}
+    // cv::Mat get_single_frame(qhyccd_handle *pCamHandle, unsigned int roiSizeX, unsigned int roiSizeY, uint32_t length){
+    //   uint32_t ret_value;
+    //   unsigned char *pImgData = 0;
+    //   unsigned int bpp;
+    //   unsigned int channels;
+    //   cv::Mat cvImg;
+    //   int cvImgType = CV_16UC1;
+    //   // printf("length %d\n", length);
+    //   // pImgData = new unsigned char[length];
+    //   pImgData = new unsigned char[length];
+    //   // ret_value = GetQHYCCDSingleFrame(pCamHandle, &roiSizeX, &roiSizeY, &bpp, &channels, pImgData);
+    //   ret_value = GetQHYCCDSingleFrame(pCamHandle, &roiSizeX, &roiSizeY, &bpp, &channels, cvImg.ptr<uint8_t>(0));
+    //           // set opencv image size
+    //   cvImg.create(roiSizeY, roiSizeX, cvImgType);
+    //   // return pImgData;}
+    //   return cvImg;}
 
     /*Canceling exposure*/
     uint32_t cancel_exposure(qhyccd_handle *pCamHandle){

@@ -1,5 +1,5 @@
 
-#define OPEN_CV
+// #define OPEN_CV
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -295,6 +295,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef OPEN_CV
                 // set opencv image type
+        cv::Mat cvImg;
 				cvImgType = CV_16UC1;
                 // set opencv image size
 				cvImg.create(roiSizeY, roiSizeX, cvImgType);
