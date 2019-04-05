@@ -1,5 +1,4 @@
-
-// #define OPEN_CV
+#define OPEN_CV
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -224,7 +223,6 @@ int main(int argc, char *argv[]) {
             printf("GetQHYCCDOverScanArea failure, error: %d\n", ret_value);
             continue;
         }
-
         // get effective area
         ret_value = GetQHYCCDOverScanArea(pCamHandle, &effectiveStartX, &effectiveStartY, &effectiveSizeX, &effectiveSizeY);
         if (QHYCCD_SUCCESS == ret_value) {
