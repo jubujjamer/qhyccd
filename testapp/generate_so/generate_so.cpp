@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <chrono>  // for high_resolution_clock
 #include "../../include/qhyccd.h"
 // #include <opencv2/opencv.hpp>
 // #include <cv.h>
@@ -72,9 +73,9 @@ uint32_t init_live_mode(qhyccd_handle *pCamHandle){
 
 // Setting exposure time
 uint32_t set_exposure(qhyccd_handle *pCamHandle, int exp_time){
-uint32_t ret_value;
-ret_value = SetQHYCCDParam(pCamHandle, CONTROL_EXPOSURE, exp_time);
-return ret_value;
+  uint32_t ret_value = SetQHYCCDParam(pCamHandle, CONTROL_EXPOSURE, exp_time);
+  printf("Correctly set exposure at %.d", exp_time);
+  return ret_value;
 }
 
 // Setting gain
@@ -204,7 +205,6 @@ In the example bits = 16 is used. CHECK
 */
 uint32_t set_bits_mode(qhyccd_handle *pCamHandle, char bits){
   uint32_t ret_value;
-  // char bits = 16;
   ret_value = IsQHYCCDControlAvailable(pCamHandle, CONTROL_TRANSFERBIT);
   if (QHYCCD_SUCCESS == ret_value){
       ret_value = SetQHYCCDBitsMode(pCamHandle, bits);
@@ -213,12 +213,23 @@ uint32_t set_bits_mode(qhyccd_handle *pCamHandle, char bits){
 
 /*Start exposure*/
 uint32_t expose_frame(qhyccd_handle *pCamHandle){
-  uint32_t ret_value;
-  ret_value = ExpQHYCCDSingleFrame(pCamHandle);
-  if (QHYCCD_ERROR != ret_value) {
-      if (QHYCCD_READ_DIRECTLY != ret_value) {
-          sleep(1);}
-      }
+  auto start = std::chrono::high_resolution_clock::now();
+  uint32_t ret_value = ExpQHYCCDSingleFrame(pCamHandle);
+  // if (QHYCCD_ERROR != ret_value) {
+  //     if (QHYCCD_READ_DIRECTLY != ret_value) {
+  //         sleep(1);}
+  //     }
+  auto finish = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed = finish - start;
+  printf("Expose took %.5f s.\n",  elapsed.count());
+  printf("QHYCCD_READ_DIRECTLY %d.\n",  QHYCCD_READ_DIRECTLY);
+  printf("ret_value %d.\n",  ret_value);
+
+  if (QHYCCD_ERROR != ret_value){
+    if (QHYCCD_READ_DIRECTLY != ret_value){
+          sleep(0.5);
+    }
+  }
   return ret_value;
 }
 
@@ -237,6 +248,24 @@ I don't know why pImgData are defined as unsigned chars, as they should be
 of the array. CHECK.
 */
 unsigned char * get_single_frame(qhyccd_handle *pCamHandle, unsigned int roiSizeX, unsigned int roiSizeY, uint32_t length){
+  unsigned char *pImgData = 0;
+  unsigned int bpp;
+  unsigned int channels;
+  // printf("length %d\n", length);
+  // pImgData = new unsigned char[length];
+  pImgData = new unsigned char[length];
+  auto start = std::chrono::high_resolution_clock::now();
+  uint32_t ret_value = GetQHYCCDSingleFrame(pCamHandle, &roiSizeX, &roiSizeY, &bpp, &channels, pImgData);
+  auto finish = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed = finish - start;
+  printf("Frame length %d.\n", length);
+  printf("channels %d.\n", channels);
+  printf("Get frame took %.5f s.\n",  elapsed.count());
+  return pImgData;}
+
+  /*Get live frame.*/
+
+unsigned char * get_live_frame(qhyccd_handle *pCamHandle, unsigned int roiSizeX, unsigned int roiSizeY, uint32_t length){
   uint32_t ret_value;
   unsigned char *pImgData = 0;
   unsigned int bpp;
@@ -244,7 +273,7 @@ unsigned char * get_single_frame(qhyccd_handle *pCamHandle, unsigned int roiSize
   // printf("length %d\n", length);
   // pImgData = new unsigned char[length];
   pImgData = new unsigned char[length];
-  ret_value = GetQHYCCDSingleFrame(pCamHandle, &roiSizeX, &roiSizeY, &bpp, &channels, pImgData);
+  ret_value = GetQHYCCDLiveFrame(pCamHandle, &roiSizeX, &roiSizeY, &bpp, &channels, pImgData);
   return pImgData;}
 
 /*Canceling exposure*/
@@ -252,6 +281,12 @@ uint32_t cancel_exposure(qhyccd_handle *pCamHandle){
   uint32_t ret_value;
   ret_value = CancelQHYCCDExposingAndReadout(pCamHandle);
   return ret_value;}
+
+/*Stopping live exposure*/
+uint32_t stop_live_capture(qhyccd_handle *pCamHandle){
+    uint32_t ret_value;
+    ret_value = StopQHYCCDLive(pCamHandle);
+    return ret_value;}
 
 /*Closing the camera port*/
 uint32_t close_camera(qhyccd_handle *pCamHandle){

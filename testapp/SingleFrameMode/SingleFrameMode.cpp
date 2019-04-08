@@ -1,4 +1,4 @@
-#define OPEN_CV
+// #define OPEN_CV
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
