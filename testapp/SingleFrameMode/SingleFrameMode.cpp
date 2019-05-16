@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include "../../include/qhyccd.h"
+// #include "../../include/qhyccd.h"
+#include "qhyccd.h"
 
 #ifdef OPEN_CV
 #include <opencv2/opencv.hpp>

@@ -4,13 +4,15 @@
 #include <string.h>
 #include <chrono>  // for high_resolution_clock
 #include "../../include/qhyccd.h"
+// #include "qhyccd.h"
+
 // #include <opencv2/opencv.hpp>
 // #include <cv.h>
 // #include <highgui.h>
 // #include <opencv2/imgproc/imgproc.hpp>
 // Use exter C to unmangle function names in compiled .so
 extern "C" {
-const char *pFirmware = "/usr/local/lib/qhy";
+// const char *pFirmware = "/usr/local/lib/qhy";
 double VERSION = 1.00;
 
 /* Init SDK resources */
