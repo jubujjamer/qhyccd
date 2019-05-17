@@ -249,13 +249,13 @@ I don't know why pImgData are defined as unsigned chars, as they should be
 16 bits arrays. One possibility is that the lenght doubles the real length
 of the array. CHECK.
 */
-unsigned char * get_single_frame(qhyccd_handle *pCamHandle, unsigned int roiSizeX, unsigned int roiSizeY, uint32_t length){
-  unsigned char *pImgData = 0;
+char get_single_frame(qhyccd_handle *pCamHandle, unsigned int roiSizeX, unsigned int roiSizeY, unsigned char *pImgData, uint32_t length){
+  // unsigned char *pImgData = 0;
   unsigned int bpp;
   unsigned int channels;
+  // pImgData = new unsigned char[length];
   // printf("length %d\n", length);
   // pImgData = new unsigned char[length];
-  pImgData = new unsigned char[length];
   auto start = std::chrono::high_resolution_clock::now();
   uint32_t ret_value = GetQHYCCDSingleFrame(pCamHandle, &roiSizeX, &roiSizeY, &bpp, &channels, pImgData);
   auto finish = std::chrono::high_resolution_clock::now();
@@ -263,7 +263,7 @@ unsigned char * get_single_frame(qhyccd_handle *pCamHandle, unsigned int roiSize
   printf("Frame length %d.\n", length);
   printf("channels %d.\n", channels);
   printf("Get frame took %.5f s.\n",  elapsed.count());
-  return pImgData;}
+  return 0;}
 
   /*Get live frame.*/
 
